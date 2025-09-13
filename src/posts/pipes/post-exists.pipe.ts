@@ -6,7 +6,7 @@ import { PostEntity } from "../postEntity";
 export class PostExistsPipe implements PipeTransform<number> {
   constructor(private readonly postsService: PostsService) {}
 
-   transform(value: number, metadata: ArgumentMetadata) {
+   async transform(value: number, metadata: ArgumentMetadata) {
     console.log("came",value);
     
     const id = Number(value);
@@ -14,7 +14,7 @@ export class PostExistsPipe implements PipeTransform<number> {
       throw new NotFoundException(`Invalid post id: ${value}`);
     }
 
-    const post = this.postsService.findOne(id);
+    const post = await this.postsService.findOne(id);
     console.log(post);
     
     if (!post) {

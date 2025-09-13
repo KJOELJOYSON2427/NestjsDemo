@@ -1,11 +1,11 @@
 import {  Body, ClassSerializerInterceptor, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post, Query, UseFilters, UseInterceptors } from '@nestjs/common';
 import { PostsService } from './posts.service';
-import type { Post as PostInterface } from './interfaces/post.interface';
 import { NotFoundFilter } from './not-found/not-found.filter';
 import { PostEntity } from './postEntity';
 import { CreatePostDto } from './dto/create-post-dto';
 import { UpdatePostDto } from './dto/update-post-dto';
 import { PostExistsPipe } from './pipes/post-exists.pipe';
+import { Post  as Postinterface} from './entities/post.entity';
 
 @Controller('posts')
 export class PostsController {
@@ -15,24 +15,19 @@ export class PostsController {
     }
 
     @Get("/")
-    findAllPost(@Query("search") search?:string):PostInterface[]{
-        const extractedPosts=this.postService.findAll();
-        if(search){
-            return extractedPosts.filter((singlePost)=>{
-                return singlePost.title.toLowerCase().includes(search.toLowerCase())
-            })
-        }
-        return extractedPosts;
+    findAllPost():Promise<Postinterface[]>{
+        return this.postService.findAll();
     }
-@UseFilters(NotFoundFilter)
+
+ 
    @Get(':id')
-findOne(@Param('id') id: number): PostInterface {
-  return this.postService.findOne(id);
-}
+   async findone(@Param('id', ParseIntPipe) id: number):Promise<Postinterface>{
+     return this.postService.findOne(id)
+   }
 
     @Post()
     @HttpCode(HttpStatus.ACCEPTED)
-    create(@Body() createPostData: CreatePostDto):PostInterface{
+    async create(@Body() createPostData: CreatePostDto):Promise<Postinterface>{
             return this.postService.create(createPostData);
     }
 
@@ -40,20 +35,21 @@ findOne(@Param('id') id: number): PostInterface {
 
 @UseInterceptors(ClassSerializerInterceptor)
 @Patch(':id')
-update(
+async update(
   @Param('id', ParseIntPipe, PostExistsPipe) post: PostEntity,
   @Body() updatePostData: UpdatePostDto
-): PostEntity {
+): Promise<PostEntity> {
   console.log(updatePostData);
   return this.postService.update(post.id as number, updatePostData);
 }
     @Delete(":id")
     @HttpCode(HttpStatus.NO_CONTENT)
-    delete(
+    async delete(
         @Param('id', ParseIntPipe) id : number,
          
-    ){
-        return this.postService.remove(id);
+    ):Promise<{message: String}>{
+         const postMessage=this.postService.remove(id);
+         return postMessage;
     }
   
 
