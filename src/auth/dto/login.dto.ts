@@ -7,7 +7,7 @@ import {
   MaxLength 
 } from 'class-validator';
 
-export class RegisterDto {
+export class LoginDto {
  
 
   @IsEmail({}, { message: 'Invalid email address' })
