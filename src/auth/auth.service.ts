@@ -13,14 +13,19 @@ type Tokens<T> = {
     accessToken: T;
     refreshToken: T;
 };
+
+
 @Injectable()
 export class AuthService {
+   
 
     constructor(
         @InjectRepository(User)
         private userRepository: Repository<User>,
         private readonly jwtService: JwtService
     ) {
+
+        
     }
 
     async register(RegisterDto: RegisterDto) {
@@ -136,7 +141,7 @@ export class AuthService {
     }
 
 
-
+  
 
 
 
@@ -160,7 +165,7 @@ export class AuthService {
             // optional
         };
 
-        const refreshToken = await this.jwtService.signAsync(payload,
+        const refreshToken = await this.jwtService.sign(payload,
             { expiresIn: '7d' }, 
         );
         return refreshToken;
@@ -175,7 +180,7 @@ export class AuthService {
             role: user.role,      // optional
         };
 
-        const accessToken = await this.jwtService.signAsync(payload,
+        const accessToken = await this.jwtService.sign(payload,
             {
                 expiresIn:'1h'
             }
@@ -226,10 +231,12 @@ export class AuthService {
 
     //find the current user
     async getUserById(userId:number){
+        console.log("came3");
+        
         const user = await this.userRepository.createQueryBuilder("user")
         .where(
             new Brackets(
-                qb1 =>qb1.where("user.id :=id",{id: userId})
+                qb1 =>qb1.where("user.id = :id",{id: userId})
             )
             
         ).getOne()
