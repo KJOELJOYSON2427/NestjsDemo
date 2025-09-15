@@ -8,6 +8,8 @@ import { User } from './entities/user.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { jwtConstants } from './constants.jwt';
 import * as fs from 'fs';
+import { PassportModule } from '@nestjs/passport';
+
 @Module({
   imports:[
     TypeOrmModule.forFeature([User]), //this like registering in this module thus for injection for the rpository
@@ -20,9 +22,11 @@ import * as fs from 'fs';
         expiresIn: '1h',
        
       }
-    })
+    }),
+    PassportModule
   ],
   controllers: [AuthController],
-  providers: [AuthService,PostsModule]
+  providers: [AuthService,PostsModule],
+  exports:[AuthService]
 })
 export class AuthModule {}

@@ -1,5 +1,5 @@
 import { ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
 import { User, UserRole } from './entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 
@@ -160,7 +160,9 @@ export class AuthService {
             // optional
         };
 
-        const refreshToken = await this.jwtService.signAsync(payload);
+        const refreshToken = await this.jwtService.signAsync(payload,
+            { expiresIn: '7d' }, 
+        );
         return refreshToken;
     }
 
@@ -169,11 +171,15 @@ export class AuthService {
         const payload = {
             // "subject" (standard claim)
             email: user.email,
-            name: user.name,
+            sub:user.id,
             role: user.role,      // optional
         };
 
-        const accessToken = await this.jwtService.signAsync(payload);
+        const accessToken = await this.jwtService.signAsync(payload,
+            {
+                expiresIn:'1h'
+            }
+        );
         return accessToken;
     }
 
@@ -187,10 +193,52 @@ export class AuthService {
 
     async refreshToken(refreshToken: string){
         try{
-              const payload= await this.jwtService.verifyAsync<RefreshTokenPayload>(refreshToken);
+              const payload= await this.jwtService.verifyAsync<RefreshTokenPayload>(refreshToken); //global setup
+
+
+            const user = await this.userRepository.createQueryBuilder("user")
+                .where(
+                    new Brackets(qb1 => {
+                        qb1.where("user.id = :id", { id: payload.sub });
+                    }),
+                )
+                .getOne();
+
+                if(!user){
+                    throw new UnauthorizedException(`invalid token`)
+                }
+
+                const accessToken =await this.generateAccessToken(user);
+
+                return {
+                    accessToken:accessToken,
+                    message:"AccessToken Generated"
+                }
+
+
+
         }catch(e){
             throw new UnauthorizedException('Invalid token')
         }
     }
 
+
+
+    //find the current user
+    async getUserById(userId:number){
+        const user = await this.userRepository.createQueryBuilder("user")
+        .where(
+            new Brackets(
+                qb1 =>qb1.where("user.id :=id",{id: userId})
+            )
+            
+        ).getOne()
+
+        if(!user){
+            throw new UnauthorizedException("Invalid User")
+        }
+        const {password, ...result}=user;
+        return result;
+
+    }
 }
