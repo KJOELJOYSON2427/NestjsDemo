@@ -9,6 +9,7 @@ import { LoginDto } from './dto/login.dto';
 import { JwtService } from "@nestjs/jwt"
 import { JwtPayload } from './types/jwt-payload.interface';
 export type RefreshTokenPayload = Pick<JwtPayload, 'sub'>;
+  
 type Tokens<T> = {
     accessToken: T;
     refreshToken: T;
@@ -17,15 +18,23 @@ type Tokens<T> = {
 
 @Injectable()
 export class AuthService {
-   
+ 
+
+
+async log(){
+    const max=await this.hashPassword("123456")
+    return max;
+}
 
     constructor(
         @InjectRepository(User)
         private userRepository: Repository<User>,
         private readonly jwtService: JwtService
     ) {
-
-        
+  this.log().then((result) => {
+    console.log(result); // will log the resolved hash
+  });
+       
     }
 
     async register(RegisterDto: RegisterDto) {

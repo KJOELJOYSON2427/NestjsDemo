@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { PostsModule } from './posts/posts.module';
 
 import configuration from "./app.config"
@@ -23,8 +24,17 @@ import { User } from './auth/entities/user.entity';
         entities:[Post , User],
         synchronize:true
 
-      }
+      },
+
     ),
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          ttl: 60000,
+          limit: 10,
+        },
+      ],
+    }),
      ConfigModule.forRoot({
       isGlobal: true,
        load: [configuration],

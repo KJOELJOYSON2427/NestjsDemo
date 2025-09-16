@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { User } from 'src/auth/entities/user.entity';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne } from 'typeorm';
 
 @Entity()
 export class Post {
@@ -11,8 +12,9 @@ export class Post {
   @Column()
   content: string;
 
-  @Column()
-  authorName: string;
+
+  @ManyToOne(()=>User, (user)=>user.posts)
+  authorName: User;
 
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;

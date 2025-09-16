@@ -29,6 +29,6 @@ import { JwtAuthGaurd } from './gaurds/jwt-auth.gaurd';
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStratergy, RolesGuard,JwtAuthGaurd],
-  exports:[AuthService, RolesGuard]
+  exports:[AuthService, RolesGuard, JwtAuthGaurd,JwtStratergy, TypeOrmModule]
 })
 export class AuthModule {}

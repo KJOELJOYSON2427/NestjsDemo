@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Post } from './interfaces/post.interface';
 import { NotFoundFilter } from './not-found/not-found.filter';
 import { PostEntity } from './postEntity';
@@ -7,44 +7,55 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Post as PostRepo } from './entities/post.entity';
 import { CreatePostDto } from './dto/create-post-dto';
 import { UpdatePostDto } from './dto/update-post-dto';
+import { User } from 'src/auth/entities/user.entity';
+import { roleHierarchy } from 'src/auth/constants/roleHierarchy';
 
 @Injectable()
 export class PostsService {
 
     constructor(
         @InjectRepository(PostRepo)
-        private postRepository: Repository<PostRepo>) {
+        private postRepository: Repository<PostRepo>,
+        @InjectRepository(User)
+        private userRepository: Repository<User>
+    ) {
 
     }
 
-    private static count = 0;
-    private posts: Post[] = [
-        {
-            id: 1,
-            title: "First",
-            content: "Lest Us Leaser",
-            authorName: "Abdul",
-            createdAt: new Date(),
+    // private static count = 0;
+    // private posts: Post[] = [
+    //     {
+    //         id: 1,
+    //         title: "First",
+    //         content: "Lest Us Leaser",
+    //         authorName: "Abdul",
+    //         createdAt: new Date(),
 
 
-        }
-    ]
+    //     }
+    // ]
 
     async findAll(): Promise<PostRepo[]> {
-        return this.postRepository.find();
+        return this.postRepository.find(
+            {
+                relations: ['authorName']
+            }
+        );
     }
 
     async findOne(id: number): Promise<PostRepo> {
-        console.log(this.posts);
+
 
         // const singlePost = this.posts.find(post => post.id === id);
         // if (!singlePost) {
         //     throw new NotFoundFilter();
 
         // }
-        const post = await this.postRepository.findOneBy({
-            id: id
-        })
+        const post = await this.postRepository.
+            createQueryBuilder('post')
+            .leftJoinAndSelect('post.authorName', 'authorName')
+            .where('post.id = :id', { id })
+            .getOne();
         if (!post) {
             throw new NotFoundException(`Post with id ${id} not found`);
 
@@ -53,15 +64,37 @@ export class PostsService {
     }
 
 
-    async create(createPostData: CreatePostDto): Promise<PostRepo> {
+    async create(createPostData: CreatePostDto, authorName: User): Promise<PostRepo> {
         const newPost = this.postRepository.create({
             title: createPostData.title,
-            authorName: createPostData.authorName,
+            authorName: authorName,
             content: createPostData.content,
         });
 
         await this.postRepository.save(newPost);  // inserts into DB
         return newPost; // now contains id, createdAt, etc.
+    }
+
+    async createQuery(createPostData: CreatePostDto, authorName: User): Promise<PostRepo> {
+        const newPost = {
+            title: createPostData.title,
+            authorName: authorName,
+            content: createPostData.content,
+        };
+
+        const result = await this.postRepository
+            .createQueryBuilder()
+            .insert()
+            .into(PostRepo)
+            .values(
+                newPost
+            )
+            .returning("*")
+            .execute()
+
+
+        // inserts into DB
+        return result.generatedMaps[0] as PostRepo; // now contains id, createdAt, etc.
     }
 
     // private getCount(): number {
@@ -72,55 +105,73 @@ export class PostsService {
     //         1
     // }
 
-
-    async update(id: number, updatePostData: UpdatePostDto): Promise<PostEntity> {
-        // 1. Find the post in the DB
-        const post = await this.postRepository.findOne({ where: { id } });
+    async update(
+        id: number,
+        updatePostData: UpdatePostDto,
+        user: User, // 👈 from @CurrentUser()
+    ): Promise<PostEntity> {
+        console.log(user.role, "Auuth");
+        
+        const post = await this.postRepository.findOne({
+            where: { id },
+            relations: ['authorName'], // include relation properly
+        });
 
         if (!post) {
             throw new NotFoundException(`Post with id ${id} not found`);
         }
- for (const [key, value] of Object.entries(updatePostData)) {
-    if (value === undefined) continue; // skip unset fields
 
-    switch (key) {
-      case 'title':
-        post.title = value;
-        break;
-      case 'content':
-        post.content = value;
-        break;
-      case 'authorName':
-        post.authorName = value;
-        break;
-      default:
-        // ignore unknown fields
-        break;
-    }
-  }
+        // ✅ Authorization check
+        if (user.role !== 'admin' && post.authorName.id !== user.id) {
+            throw new ForbiddenException('You can only update your own posts');
+        }
 
+        // ✅ Handle author relation update (admin-only normally)
+        if (updatePostData.authorName) {
+            const newAuthor = await this.userRepository.findOne({
+                where: { name: updatePostData.authorName },
+            });
 
-        // 3. Save back to DB
+            if (!newAuthor) {
+                throw new NotFoundException(
+                    `User with name ${updatePostData.authorName} not found`,
+                );
+            }
+
+            post.authorName = newAuthor;
+            delete updatePostData.authorName;
+        }
+
+        // ✅ Merge other fields
+        const { authorName, ...rest } = updatePostData;
+        this.postRepository.merge(post, rest);
+
         const updatedPost = await this.postRepository.save(post);
 
-        // 4. Return entity wrapper if you’re using `PostEntity`
         return new PostEntity(updatedPost);
     }
 
-    async remove(
-        id: number,
 
-    ): Promise<{ message: String }> {
-        const postIndex = await this.postRepository.exists({where:{
-            id
-        }})
+    async remove(id: number): Promise<{ message: string }> {
+        // 1. Check if the post exists
+        const post = await this.postRepository
+            .createQueryBuilder("post")
+            .where("post.id = :id", { id })
+            .getOne();
 
-        if (!postIndex) {
+        if (!post) {
             throw new NotFoundException(`Post with id ${id} not found`);
         }
 
+        // 2. Delete using QueryBuilder
+        await this.postRepository
+            .createQueryBuilder()
+            .delete()
+            .from(PostRepo)
+            .where("id = :id", { id })
+            .execute();
 
-        await this.postRepository.delete(id)
-      return { message: `Post with id ${id} has been removed` };    }
-
+        // 3. Return confirmation
+        return { message: `Post with id ${id} has been removed` };
+    }
 }
