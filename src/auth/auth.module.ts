@@ -25,6 +25,7 @@ import { JwtAuthGaurd } from './gaurds/jwt-auth.gaurd';
        
       }
     }),
+    
     PassportModule
   ],
   controllers: [AuthController],

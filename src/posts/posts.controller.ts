@@ -11,7 +11,9 @@ import { RolesGuard } from 'src/auth/gaurds/roles-gaurd';
 import { CurrentUser } from 'src/auth/decorator/user.decorator';
 import { currentUser } from '@clerk/nextjs/server';
 import { User } from 'src/auth/entities/user.entity';
-
+import { SkipThrottle, Throttle, ThrottlerException, ThrottlerGuard } from '@nestjs/throttler';
+import { LoginThrottler } from 'src/auth/throttler/login.throttler';
+@SkipThrottle()
 @Controller('posts')
 export class PostsController {
 
@@ -34,7 +36,8 @@ export class PostsController {
 
   @Post()
   @HttpCode(HttpStatus.ACCEPTED)
-  @UseGuards(JwtAuthGaurd)
+  @UseGuards(JwtAuthGaurd,LoginThrottler)
+ 
   async create(@Body() createPostData: CreatePostDto, @CurrentUser() currentUser: User): Promise<Postinterface> {
     return this.postService.create(createPostData, currentUser);
   }
@@ -44,6 +47,7 @@ export class PostsController {
   @UseInterceptors(ClassSerializerInterceptor)
   @Patch(':id')
   @UseGuards(JwtAuthGaurd)
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   async update(
     @Param('id', ParseIntPipe, PostExistsPipe) post: PostEntity,
     @Body() updatePostData: UpdatePostDto,

@@ -3,14 +3,17 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
 import { ConfigModule } from '@nestjs/config';
+import { CacheModule } from '@nestjs/cache-manager';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { PostsModule } from './posts/posts.module';
 
 import configuration from "./app.config"
 import { Post } from './posts/entities/post.entity';
 import { AuthModule } from './auth/auth.module';
 import { User } from './auth/entities/user.entity';
+import { APP_GUARD } from '@nestjs/core';
+import { LoginThrottler } from './auth/throttler/login.throttler';
 @Module({
   imports: [
     TypeOrmModule.forRoot(
@@ -30,11 +33,17 @@ import { User } from './auth/entities/user.entity';
     ThrottlerModule.forRoot({
       throttlers: [
         {
-          ttl: 60000,
+          ttl: 60_000,
           limit: 10,
         },
       ],
     }),
+    CacheModule.register({
+      isGlobal:true,
+  ttl: 30000,
+  max:100 // milliseconds
+  
+}),
      ConfigModule.forRoot({
       isGlobal: true,
        load: [configuration],
@@ -44,6 +53,8 @@ import { User } from './auth/entities/user.entity';
     
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService
+   
+  ],
 })
 export class AppModule {}

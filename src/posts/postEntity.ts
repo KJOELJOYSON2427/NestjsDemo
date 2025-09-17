@@ -5,7 +5,7 @@ export class PostEntity {
   id?: number;
 
   @Expose()
-  title?: String;
+  title?: string;
 
   @Expose()
   content?: String;

@@ -10,6 +10,7 @@ import { JwtAuthGaurd } from './gaurds/jwt-auth.gaurd';
 import { CurrentUser} from './decorator/user.decorator';
 import type { Auth } from './types/Auth.types';
 import { RolesGuard } from './gaurds/roles-gaurd';
+import { LoginThrottler } from './throttler/login.throttler';
 
 @Controller('auth')
 export class AuthController {
@@ -25,6 +26,7 @@ export class AuthController {
 
 
   @Post('login')
+  @UseGuards(LoginThrottler)
   login(@Body()  loginDto:LoginDto){
       return this.authService.signIn(loginDto);
   }
