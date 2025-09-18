@@ -1,0 +1,28 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type Achievement {
+  description: String
+  difficulty: Difficulty!
+  id: Int!
+  title: String!
+}
+
+"""Difficulty levels for achievements"""
+enum Difficulty {
+  Easy
+  HARD
+  MEDIUM
+}
+
+type Game {
+  achievements: Achievement!
+  genre: String!
+  id: Int!
+  name: String!
+}
+
+type Query {
+  games: [Game!]!
+}
