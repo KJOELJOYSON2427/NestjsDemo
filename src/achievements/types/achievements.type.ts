@@ -25,4 +25,7 @@ export class Achievement {
 
   @Field(type =>Difficulty)
   difficulty: Difficulty
+
+  @Field(() => Int)
+  gameId: number;  
 }

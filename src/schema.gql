@@ -5,6 +5,7 @@
 type Achievement {
   description: String
   difficulty: Difficulty!
+  gameId: Int!
   id: Int!
   title: String!
 }
@@ -29,19 +30,24 @@ enum Difficulty {
 }
 
 type Game {
-  achievements(limit: Float, offset: Float): [Achievement!]
+  achievements(limit: Int, offset: Int): [Achievement!]
   genre: String!
   id: Int!
   name: String!
 }
 
 type Mutation {
-  createAchievements(input: CreateAchievementInput!): Achievement!
+  createAchievement(input: CreateAchievementInput!): Achievement!
   createGame(input1: CreateGameInput!): Game!
 }
 
 type Query {
+  Achievements: [Achievement!]!
   game(id: Int!): Game!
   gameWithOffset(limit: Int = 10, offset: Int = 0): [Game!]!
   games: [Game!]!
+}
+
+type Subscription {
+  gameCreated: Game!
 }
