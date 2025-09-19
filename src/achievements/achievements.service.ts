@@ -2,9 +2,11 @@ import { Injectable } from '@nestjs/common';
 
 import { Achievement } from './types/achievements.type';
 import { Difficulty } from './types/achievements.type';
+import { CreateAchievementInput } from './types/CreateAchievement.types';
 
 @Injectable()
 export class AchievementsService {
+  private currentId = 1;
   private achievements: Achievement[] = [
     { id: 1, title: 'First Kill', description: 'Defeated your first ghost.', difficulty: Difficulty.Easy },
     { id: 2, title: 'Survivor', description: 'Completed the level without dying.', difficulty: Difficulty.MEDIUM },
@@ -12,7 +14,23 @@ export class AchievementsService {
     { id: 4, title: 'Coin Collector', description: 'Collected 100 coins.', difficulty: Difficulty.MEDIUM},
   ];
 
-  findByGameId(gameId: number): Achievement[] {
-    return this.achievements.filter(a => a.id === gameId);
+
+  create(data: CreateAchievementInput): Achievement {
+    const newAchievement: Achievement = {
+      id: data.gameId,
+      title: data.title,
+      description: data.description,
+      difficulty: data.difficulty,
+      
+    };
+
+    this.achievements.push(newAchievement);
+    return newAchievement;
   }
-}
+  findByGameId(gameId: number,offset = 0, limit = 10): Achievement[] {
+    return this.achievements
+      .filter(a => a.id === gameId)
+      .slice(offset, offset + limit);
+  }
+  }
+
