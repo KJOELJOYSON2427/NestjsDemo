@@ -1,15 +1,12 @@
 import { Field, ObjectType } from "@nestjs/graphql";
-import { Character } from "./Character.types";
 
 
 
 
 
 
-@ObjectType({
-    implements:()=> Character
-})
-export class Hero implements Character {
+@ObjectType()
+export class Hero  {
   
   @Field()
   name: string;
@@ -20,6 +17,5 @@ export class Hero implements Character {
   @Field()
   weapon: string;
 
-  @Field(()=>[Character] , { nullable: true })
-  friends?: Character[];
+  
 }

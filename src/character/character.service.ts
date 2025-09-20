@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Hero } from './types/Hero.types';
 import { Villain } from './types/Villian.types';
-import { Character } from './types/Character.types';
 
 @Injectable()
 export class CharacterService {
@@ -14,8 +13,6 @@ export class CharacterService {
   ];
 
 
-  getCharacters(): Array<Character>{
-    return [...this.heroes, ...this.villains];
-  }
+ 
 
 }

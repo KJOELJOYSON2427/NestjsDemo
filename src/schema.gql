@@ -10,11 +10,7 @@ type Achievement {
   title: String!
 }
 
-interface Character {
-  friends: [Character!]
-  name: String!
-  power: String!
-}
+union Characterunion = Hero | Villain
 
 input CreateAchievementInput {
   description: String!
@@ -42,8 +38,7 @@ type Game {
   name: String!
 }
 
-type Hero implements Character {
-  friends: [Character!]
+type Hero {
   name: String!
   power: String!
   weapon: String!
@@ -59,16 +54,15 @@ type Query {
   game(id: Int!): Game!
   gameWithOffset(limit: Int = 10, offset: Int = 0): [Game!]!
   games: [Game!]!
-  getCharacters: [Character!]!
+  getCharacters: [Characterunion!]!
 }
 
 type Subscription {
   gameCreated(genre: String!): Game!
 }
 
-type Villain implements Character {
+type Villain {
   evilPlan: String!
-  friends: [Character!]
   name: String!
   power: String!
 }
