@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Post } from './interfaces/post.interface';
 import { NotFoundFilter } from './not-found/not-found.filter';
 import { PostEntity } from './postEntity';
@@ -9,6 +9,10 @@ import { CreatePostDto } from './dto/create-post-dto';
 import { UpdatePostDto } from './dto/update-post-dto';
 import { User } from 'src/auth/entities/user.entity';
 import { roleHierarchy } from 'src/auth/constants/roleHierarchy';
+import { CACHE_MANAGER , Cache} from '@nestjs/cache-manager';
+import { FindPostsQueryDto } from './dto/find-post-dto';
+import { PaginatedResponse } from 'src/common/interface/paginated.interface';
+import { link } from 'fs';
 
 @Injectable()
 export class PostsService {
@@ -17,11 +21,20 @@ export class PostsService {
         @InjectRepository(PostRepo)
         private postRepository: Repository<PostRepo>,
         @InjectRepository(User)
-        private userRepository: Repository<User>
+        private userRepository: Repository<User>,
+        @Inject(CACHE_MANAGER) private cacheManager: Cache
     ) {
 
     }
 
+private PostListCacheKey: Set<string> = new Set();
+
+      
+         private generatePostsListCacheKey(query:FindPostsQueryDto){
+            const {limit=10,page=1, title}=query;
+            const key =`page_list_page${page}_limit${limit}_title${title || 'all'}`;
+            return key;
+         }
     // private static count = 0;
     // private posts: Post[] = [
     //     {
@@ -35,14 +48,66 @@ export class PostsService {
     //     }
     // ]
 
-    async findAll(): Promise<PostRepo[]> {
-        return this.postRepository.find(
-            {
-                relations: ['authorName']
-            }
-        );
+    async findAll(query: FindPostsQueryDto): Promise<PaginatedResponse<PostRepo>> {
+        const key = this.generatePostsListCacheKey(query);
+        
+        this.PostListCacheKey.add(key);
+          const getCachedData =await this.cacheManager.get<PaginatedResponse<PostRepo>>(key);
+
+         if(getCachedData){
+            console.log(`Cache Hit-------> Returning post lists from Cache ${key}`);
+            return getCachedData;
+            
+         }
+         console.log(`Cache miss--->from key ${key}`);
+         const result=await this.findAllWithDataBase(query)
+         const {post ,totalItems}=result;
+         const totalPages = Math.ceil(totalItems/query.limit);
+         const responseResult:PaginatedResponse<PostRepo> ={
+              items:post,
+              meta:{
+                currentPage: query.page,
+                itemsPerPage:query.limit,
+                itemCount:totalItems,
+                totalPages:totalPages,
+                hasNextPage:query.page<totalPages ,
+                hasPreviousPage:query.page >1
+              }
+
+         }
+
+         //save to cache
+         await this.cacheManager.set<PaginatedResponse<PostRepo>>(key,responseResult);
+         return responseResult;
+  
     }
 
+
+     async findAllWithDataBase(query: FindPostsQueryDto){
+       
+        const {limit=10, page=1, title} =query;
+        const skip =(page-1)*limit;
+
+        const queryBuilder=await this.postRepository.createQueryBuilder("post")
+        .leftJoinAndSelect('post.authorName', 'author')
+        .skip(skip).take(limit);
+
+        if(title){
+            queryBuilder.andWhere(
+                'post.title ILIKE :title',{
+                    title: `%${title}%`
+                }
+            )
+        }
+      
+        const [post,count] = await queryBuilder.getManyAndCount()
+        
+        return {
+            post:post,
+            totalItems:count
+        };
+
+     }
     async findOne(id: number): Promise<PostRepo> {
 
 

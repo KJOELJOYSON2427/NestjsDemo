@@ -7,13 +7,14 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { PostsModule } from './posts/posts.module';
+import { GraphQLModule } from '@nestjs/graphql';
 
 import configuration from "./app.config"
 import { Post } from './posts/entities/post.entity';
 import { AuthModule } from './auth/auth.module';
 import { User } from './auth/entities/user.entity';
 import { APP_GUARD } from '@nestjs/core';
-import { LoginThrottler } from './auth/throttler/login.throttler';
+import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 @Module({
   imports: [
     TypeOrmModule.forRoot(
@@ -30,6 +31,7 @@ import { LoginThrottler } from './auth/throttler/login.throttler';
       },
 
     ),
+
     ThrottlerModule.forRoot({
       throttlers: [
         {
@@ -40,7 +42,7 @@ import { LoginThrottler } from './auth/throttler/login.throttler';
     }),
     CacheModule.register({
       isGlobal:true,
-  ttl: 30000,
+  ttl: 0,
   max:100 // milliseconds
   
 }),

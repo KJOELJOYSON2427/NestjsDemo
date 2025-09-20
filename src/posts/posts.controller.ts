@@ -13,6 +13,8 @@ import { currentUser } from '@clerk/nextjs/server';
 import { User } from 'src/auth/entities/user.entity';
 import { SkipThrottle, Throttle, ThrottlerException, ThrottlerGuard } from '@nestjs/throttler';
 import { LoginThrottler } from 'src/auth/throttler/login.throttler';
+import { FindPostsQueryDto } from './dto/find-post-dto';
+import { PaginatedResponse } from 'src/common/interface/paginated.interface';
 @SkipThrottle()
 @Controller('posts')
 export class PostsController {
@@ -22,8 +24,8 @@ export class PostsController {
   }
 
   @Get("/")
-  findAllPost(): Promise<Postinterface[]> {
-    return this.postService.findAll();
+ async  findAllPost( @Query() query:FindPostsQueryDto): Promise<PaginatedResponse<Postinterface>> {
+    return await this.postService.findAll(query);
   }
 
 
