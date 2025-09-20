@@ -10,6 +10,12 @@ type Achievement {
   title: String!
 }
 
+interface Character {
+  friends: [Character!]
+  name: String!
+  power: String!
+}
+
 input CreateAchievementInput {
   description: String!
   difficulty: Difficulty!
@@ -36,6 +42,13 @@ type Game {
   name: String!
 }
 
+type Hero implements Character {
+  friends: [Character!]
+  name: String!
+  power: String!
+  weapon: String!
+}
+
 type Mutation {
   createAchievement(input: CreateAchievementInput!): Achievement!
   createGame(input1: CreateGameInput!): Game!
@@ -46,8 +59,16 @@ type Query {
   game(id: Int!): Game!
   gameWithOffset(limit: Int = 10, offset: Int = 0): [Game!]!
   games: [Game!]!
+  getCharacters: [Character!]!
 }
 
 type Subscription {
-  gameCreated: Game!
+  gameCreated(genre: String!): Game!
+}
+
+type Villain implements Character {
+  evilPlan: String!
+  friends: [Character!]
+  name: String!
+  power: String!
 }

@@ -4,6 +4,7 @@ import {ApolloDriver, ApolloDriverConfig} from "@nestjs/apollo"
 import { GamesModule } from "./games/games.module";
 import { AchievementsModule } from './achievements/achievements.module';
 import { PubSub } from "graphql-subscriptions";
+import { CharacterModule } from './character/character.module';
 
 
 @Module({
@@ -17,14 +18,16 @@ import { PubSub } from "graphql-subscriptions";
         csrfPrevention: true,
        subscriptions:{
         'graphql-ws':true,
-        "subscriptions-transport-ws":true
+       
 
-       }
+       },
+       inheritResolversFromInterfaces:true
 
     }),
    
     GamesModule,
-    AchievementsModule
+    AchievementsModule,
+    CharacterModule
   ],
   
 })

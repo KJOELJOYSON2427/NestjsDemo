@@ -50,7 +50,7 @@ async createGame(
   @Args('input1') createGameInput: CreateGameInput
 ): Promise<Game> {
   const newGame =this.gamesService.create(createGameInput)
-  this.pubSub.publish('gameCreated1', {gameCreated: newGame})
+  this.pubSub.publish('gameCreated', {gameCreated: newGame})
 
   return newGame;
 }
@@ -76,13 +76,18 @@ const game = this.games.find(game => game.id === id);
 
   
 
+@Subscription(() => Game, {
+  name: 'gameCreated',
+ filter: (payload, variables) => {
+    console.log('Payload genre:', payload.gameCreated.genre);
+    console.log('Variables genre:', variables.genre);
+    return payload.gameCreated.genre.toLowerCase() === variables.genre?.toLowerCase();
+  },
+})
+newGame(@Args('genre') genre: string) {
+  return this.pubSub.asyncIterableIterator('gameCreated');
+}
 
-  @Subscription(()=>Game, {
-    name: 'gameCreated'
-  })
-  newGame(){
-    return  this.pubSub.asyncIterableIterator('gameCreated1')
-  }
 }
 
     
