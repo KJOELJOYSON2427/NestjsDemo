@@ -15,6 +15,7 @@ import { AuthModule } from './auth/auth.module';
 import { User } from './auth/entities/user.entity';
 import { APP_GUARD } from '@nestjs/core';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
+import { FileUploadModuleModule } from './file-upload-module/file-upload-module.module';
 @Module({
   imports: [
     TypeOrmModule.forRoot(
@@ -45,13 +46,17 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
   ttl: 0,
   max:100 // milliseconds
   
-}),
+}),ConfigModule.forRoot({
+  isGlobal: true
+})
+,
      ConfigModule.forRoot({
       isGlobal: true,
        load: [configuration],
      }),
      PostsModule,
      AuthModule,
+     FileUploadModuleModule,
     
   ],
   controllers: [AppController],

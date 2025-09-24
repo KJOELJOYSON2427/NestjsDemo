@@ -16,7 +16,7 @@ import { link } from 'fs';
 
 @Injectable()
 export class PostsService {
-
+  
     constructor(
         @InjectRepository(PostRepo)
         private postRepository: Repository<PostRepo>,
@@ -29,7 +29,7 @@ export class PostsService {
 
 private PostListCacheKey: Set<string> = new Set();
 
-      
+      private SinglePostListCacheKey:string;
          private generatePostsListCacheKey(query:FindPostsQueryDto){
             const {limit=10,page=1, title}=query;
             const key =`page_list_page${page}_limit${limit}_title${title || 'all'}`;
@@ -51,7 +51,7 @@ private PostListCacheKey: Set<string> = new Set();
     async findAll(query: FindPostsQueryDto): Promise<PaginatedResponse<PostRepo>> {
         const key = this.generatePostsListCacheKey(query);
         
-        this.PostListCacheKey.add(key);
+         this.PostListCacheKey.add(key);
           const getCachedData =await this.cacheManager.get<PaginatedResponse<PostRepo>>(key);
 
          if(getCachedData){
@@ -109,22 +109,32 @@ private PostListCacheKey: Set<string> = new Set();
 
      }
     async findOne(id: number): Promise<PostRepo> {
+        const key = `post_${id}`;
 
+        // 1. Check cache
+        const cachedPost = await this.cacheManager.get<PostRepo>(key);
+        if (cachedPost) {
+            console.log(`Cache Hit -----> Returning Post from Cache ${key}`);
+            return cachedPost;
+        }
 
-        // const singlePost = this.posts.find(post => post.id === id);
-        // if (!singlePost) {
-        //     throw new NotFoundFilter();
-
-        // }
-        const post = await this.postRepository.
-            createQueryBuilder('post')
+        // 2. Query DB if not in cache
+        const post = await this.postRepository
+            .createQueryBuilder('post')
             .leftJoinAndSelect('post.authorName', 'authorName')
             .where('post.id = :id', { id })
             .getOne();
+
         if (!post) {
             throw new NotFoundException(`Post with id ${id} not found`);
-
         }
+
+        // 3. Save in cache
+        await this.cacheManager.set<PostRepo>(key, post);
+        this.SinglePostListCacheKey=key; // now we track it
+
+        console.log(`Cache Miss -----> Fetched from DB and cached with key ${key}`);
+
         return post;
     }
 
@@ -136,7 +146,14 @@ private PostListCacheKey: Set<string> = new Set();
             content: createPostData.content,
         });
 
+        
+        
+
         await this.postRepository.save(newPost);  // inserts into DB
+        for(const key of this.PostListCacheKey){
+           await this.cacheManager.del(key)
+           this.PostListCacheKey.delete(key);
+        }
         return newPost; // now contains id, createdAt, etc.
     }
 
@@ -157,7 +174,14 @@ private PostListCacheKey: Set<string> = new Set();
             .returning("*")
             .execute()
 
-
+       for(const key of this.PostListCacheKey){
+           await this.cacheManager.del(key)
+           this.PostListCacheKey.delete(key);
+           
+        }
+          
+           
+        
         // inserts into DB
         return result.generatedMaps[0] as PostRepo; // now contains id, createdAt, etc.
     }
@@ -210,9 +234,16 @@ private PostListCacheKey: Set<string> = new Set();
         // ✅ Merge other fields
         const { authorName, ...rest } = updatePostData;
         this.postRepository.merge(post, rest);
-
+         
         const updatedPost = await this.postRepository.save(post);
-
+          for(const key of this.PostListCacheKey){
+           await this.cacheManager.del(key)
+           this.PostListCacheKey.delete(key);
+           
+        }
+          const key = `post_${id}`;
+           await this.cacheManager.del(key)
+           this.SinglePostListCacheKey="";
         return new PostEntity(updatedPost);
     }
 
@@ -235,7 +266,16 @@ private PostListCacheKey: Set<string> = new Set();
             .from(PostRepo)
             .where("id = :id", { id })
             .execute();
-
+            const key = `post_${id}`;
+           await this.cacheManager.del(key)
+           this.SinglePostListCacheKey="";
+        
+        for(const key of this.PostListCacheKey){
+           await this.cacheManager.del(key)
+           this.PostListCacheKey.delete(key);
+           
+        }
+         
         // 3. Return confirmation
         return { message: `Post with id ${id} has been removed` };
     }
