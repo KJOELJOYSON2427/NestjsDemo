@@ -5,6 +5,7 @@ import { Readable } from 'stream';
 
 @Injectable()
 export class CloudinaryService {
+  
   folderName: string;
 
   constructor(
@@ -34,4 +35,7 @@ export class CloudinaryService {
         resource_type:"auto"
     })? true:false;
   }
+
+
+  
 }

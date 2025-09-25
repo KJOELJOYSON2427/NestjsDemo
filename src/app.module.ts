@@ -16,6 +16,7 @@ import { User } from './auth/entities/user.entity';
 import { APP_GUARD } from '@nestjs/core';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { FileUploadModuleModule } from './file-upload-module/file-upload-module.module';
+import { File } from './file-upload-module/entity/file.entity';
 @Module({
   imports: [
     TypeOrmModule.forRoot(
@@ -26,7 +27,7 @@ import { FileUploadModuleModule } from './file-upload-module/file-upload-module.
         username:'postgres',
         password:'joel.2427',
         database:'nestjs',
-        entities:[Post , User],
+        entities:[Post , User,File],
         synchronize:true
 
       },
