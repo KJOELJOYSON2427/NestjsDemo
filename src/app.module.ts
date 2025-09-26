@@ -17,6 +17,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { FileUploadModuleModule } from './file-upload-module/file-upload-module.module';
 import { File } from './file-upload-module/entity/file.entity';
+import { EventsModule } from './events/events.module';
 @Module({
   imports: [
     TypeOrmModule.forRoot(
@@ -58,6 +59,7 @@ import { File } from './file-upload-module/entity/file.entity';
      PostsModule,
      AuthModule,
      FileUploadModuleModule,
+     EventsModule,
     
   ],
   controllers: [AppController],

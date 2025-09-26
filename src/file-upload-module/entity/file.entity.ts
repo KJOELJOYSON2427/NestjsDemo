@@ -13,7 +13,7 @@ export class File{
     originalName : string;
   
      @Column()
-     mimiType: string;
+     mimeType: string;
 
      @Column()
      size: number;

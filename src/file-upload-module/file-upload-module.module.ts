@@ -13,8 +13,11 @@ import { memoryStorage } from 'multer';
       [File]
     ),
     MulterModule.register({
+      
       storage:memoryStorage(),
       fileFilter(req, file, callback) {
+        console.log("not called");
+        
           if(file.mimetype.match(/\/(jpg|jpeg|png)$/)){
             callback(null, true);
           }else{

@@ -17,6 +17,8 @@ export class CloudinaryService {
 
   async uploadImage(file: Express.Multer.File): Promise<UploadApiResponse> {
     return new Promise((resolve, reject) => {
+      console.log("va");
+      
       const upload = this.cloudinary.uploader.upload_stream(
         { folder: this.folderName, resource_type: 'auto', access_mode: 'public' },
         (error, result) => {
@@ -32,7 +34,7 @@ export class CloudinaryService {
 
   async deleteFile(publicId : string):Promise<boolean>{
     return await this.cloudinary.uploader.destroy(publicId,{
-        resource_type:"auto"
+        resource_type:"image"
     })? true:false;
   }
 

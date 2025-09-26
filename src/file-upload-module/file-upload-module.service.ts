@@ -21,25 +21,27 @@ export class FileUploadModuleService {
     }
 
 
-    async uploadFile(file: Express.Multer.File,user:User, description?:string):Promise<File|Error>{
+    async uploadFile(file: Express.Multer.File,user:User, description?:string):Promise<File>{
           const cloudinaryResponse= await this.cloudinaryService.uploadImage(file);
            const{
             original_filename,
             public_id,
             url,
-            context
+            
 
            }=cloudinaryResponse;
 
            const newlyCreatedFile={
-             original_filename:original_filename,
-             public_id:public_id,
+             originalName:original_filename,
+             publicId:public_id,
              mimeType: file.mimetype,
              url:url,
              size:file.size,
              description,
              uploader:user
            }
+           console.log(newlyCreatedFile);
+           
 
            await this.fileRepository
            .createQueryBuilder('file')
@@ -54,10 +56,15 @@ export class FileUploadModuleService {
            .leftJoinAndSelect('file.uploader', 'user')
            .andWhere('file.publicId= :publicId', {publicId: public_id})
            .getOne();
+           console.log(savedFile);
+           
            if(!savedFile){
+            console.log("valo");
+            
              throw new Error();
            }
           // Cache the saved file using publicId as the key
+
           await this.cacheManager.set<File>(`file:${public_id}`,savedFile ,3600)
            
            return savedFile;
@@ -67,7 +74,12 @@ export class FileUploadModuleService {
     async findAll(): Promise<File[]> {
   // Try to get from cache
   let files = await this.cacheManager.get<File[]>('fileAll');
-  if (files) return files;
+  console.log("Got Hit byCache");
+  
+  if (files){
+    console.log("Got Hit byCache");
+    return files;
+  } 
 
   // Fetch from DB if not cached
   const [data, count] = await this.fileRepository
@@ -85,11 +97,19 @@ export class FileUploadModuleService {
 }
 
 async remove(public_id: string){
+  
+  console.log(public_id);
+  
   // 1️⃣ Fetch the file from DB
   const file = await this.fileRepository
   .createQueryBuilder('file')
-  .where('file.publicId= :publicId', {publicId:public_id})
+  .where('file.publicId LIKE :publicId', { publicId: `%/${public_id}` })
   .getOne();
+
+console.log(file);
+
+  console.log(file);
+  
 
    if (!file) {
     throw new Error('File not found');
