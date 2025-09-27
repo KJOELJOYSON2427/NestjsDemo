@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { UserEventEmitterService } from './listerners/user-events.service';
+import { UserRegistrationEventListener } from './listerners/user-registration.event';
 
 @Module({
  imports:[
@@ -8,9 +10,20 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     wildcard:false,
     maxListeners:12,
     verboseMemoryLeak:true,
-    delimiter:'.',
+   
     
   })
+ ],
+ providers:[
+
+      {
+        provide:'UserService',
+        useClass:UserEventEmitterService
+      },
+      UserRegistrationEventListener
+ ],
+ exports:[
+  'UserService'
  ]
   
  })

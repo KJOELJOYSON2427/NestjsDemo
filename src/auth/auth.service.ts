@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { Brackets, Repository } from 'typeorm';
 import { User, UserRole } from './entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -8,6 +8,7 @@ import bcrypt from "bcrypt";
 import { LoginDto } from './dto/login.dto';
 import { JwtService } from "@nestjs/jwt"
 import { JwtPayload } from './types/jwt-payload.interface';
+import { UserEventEmitterService } from 'src/events/listerners/user-events.service';
 export type RefreshTokenPayload = Pick<JwtPayload, 'sub'>;
   
 type Tokens<T> = {
@@ -29,11 +30,10 @@ async log(){
     constructor(
         @InjectRepository(User)
         private userRepository: Repository<User>,
-        private readonly jwtService: JwtService
+        private readonly jwtService: JwtService,
+        @Inject('UserService') private readonly userEventService: UserEventEmitterService
     ) {
-  this.log().then((result) => {
-    console.log(result); // will log the resolved hash
-  });
+ 
        
     }
 
@@ -67,10 +67,11 @@ async log(){
         if (!savedUser) {
             throw new UnauthorizedException("Something went wrong!");
         }
-
+         
         const { password, ...result } = savedUser;
-
-
+   console.log(`came to registration event`)
+        await this.userEventService.emitUserRegistered(savedUser)
+    
         return {
             user: result,
             message: "Registration Successfull"

@@ -12,6 +12,8 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtStratergy } from './stratergies/jwtStartegy';
 import { RolesGuard } from './gaurds/roles-gaurd';
 import { JwtAuthGaurd } from './gaurds/jwt-auth.gaurd';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { EventsModule } from 'src/events/events.module';
 
 @Module({
   imports:[
@@ -25,7 +27,7 @@ import { JwtAuthGaurd } from './gaurds/jwt-auth.gaurd';
        
       }
     }),
-    
+    EventsModule,
     PassportModule
   ],
   controllers: [AuthController],
