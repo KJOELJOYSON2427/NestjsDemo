@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -18,6 +18,7 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { FileUploadModuleModule } from './file-upload-module/file-upload-module.module';
 import { File } from './file-upload-module/entity/file.entity';
 import { EventsModule } from './events/events.module';
+import { LoggerMiddleware } from './common/logger/logger.middleware';
 @Module({
   imports: [
     TypeOrmModule.forRoot(
@@ -67,4 +68,10 @@ import { EventsModule } from './events/events.module';
    
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule{
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(LoggerMiddleware)
+    .forRoutes("*")
+  }
+  
+}
